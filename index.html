@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebCorg - Live Chat Platform</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 450px;
+            padding: 50px 40px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .brand-name {
+            font-size: 36px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .tagline {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 15px;
+        }
+
+        #googleSignInButton {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .dashboard-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+            font-weight: 600;
+            color: #667eea;
+            transition: all 0.3s;
+            font-size: 15px;
+        }
+
+        .dashboard-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 998;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .dashboard-sidebar {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 380px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+            z-index: 999;
+            transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            overflow-y: auto;
+        }
+
+        .dashboard-sidebar.active {
+            right: 0;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 25px;
+            color: white;
+        }
+
+        .dashboard-profile {
+            text-align: center;
+        }
+
+        .dashboard-profile img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid white;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .dashboard-profile h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .dashboard-profile p {
+            margin: 8px 0 0 0;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        .dashboard-menu {
+            padding: 25px;
+        }
+
+        .dashboard-menu-item {
+            padding: 18px 20px;
+            margin: 12px 0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 16px;
+            color: #333;
+            background: #f8f9fa;
+            font-weight: 500;
+        }
+
+        .dashboard-menu-item:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(8px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .dashboard-menu-item span:first-child {
+            font-size: 26px;
+        }
+
+        .members-window {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            width: 90%;
+            max-width: 550px;
+            max-height: 85vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .members-window.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .members-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .members-header h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .close-window-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .close-window-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }
+
+        .members-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px;
+            margin: 12px 0;
+            border-radius: 14px;
+            background: #f8f9fa;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .member-item:hover {
+            background: #e9ecef;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .member-info img {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            border: 3px solid #667eea;
+        }
+
+        .member-details h4 {
+            margin: 0;
+            font-size: 17px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .member-details p {
+            margin: 6px 0 0 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .online-badge {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            background: #4caf50;
+            border-radius: 50%;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+        }
+
+        .chat-btn {
+            padding: 11px 22px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .chat-btn:hover {
+            background: #5568d3;
+            transform: scale(1.08);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .chat-window {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            width: 90%;
+            max-width: 650px;
+            height: 85vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            z-index: 1001;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-window.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 22px 25px;
+            color: white;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chat-header img {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            border: 3px solid white;
+        }
+
+        .chat-header-info {
+            flex: 1;
+        }
+
+        .chat-header-info h3 {
+            margin: 0;
+            font-size: 19px;
+            font-weight: 600;
+        }
+
+        .chat-header-info p {
+            margin: 6px 0 0 0;
+            font-size: 13px;
+            opacity: 0.95;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 18px;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-bubble {
+            background: white;
+            padding: 14px 18px;
+            border-radius: 16px;
+            max-width: 75%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .message.sent .message-bubble {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received .message-bubble {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            font-size: 11px;
+            color: #999;
+        }
+
+        .message.sent .message-info {
+            justify-content: flex-end;
+        }
+
+        .message-info img {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+        }
+
+        .chat-input-area {
+            padding: 22px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .chat-input-area input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn {
+            width: 54px;
+            height: 54px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover {
+            background: #5568d3;
+            transform: scale(1.12);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .info-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            width: 90%;
+            max-width: 550px;
+            max-height: 85vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            z-index: 1002;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            overflow: hidden;
+        }
+
+        .info-modal.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .info-modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-modal-header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .info-modal-content {
+            padding: 35px;
+            overflow-y: auto;
+            max-height: calc(85vh - 90px);
+        }
+
+        .info-modal-content h3 {
+            color: #667eea;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .info-modal-content p {
+            color: #666;
+            line-height: 1.7;
+            margin-bottom: 18px;
+            font-size: 15px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 70px;
+            margin-bottom: 20px;
+        }
+
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 12px 22px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .connection-status.connected {
+            background: #4caf50;
+            color: white;
+        }
+
+        .connection-status.disconnected {
+            background: #f44336;
+            color: white;
+        }
+
+        .connection-status.connecting {
+            background: #ff9800;
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+    <!-- Connection Status -->
+    <div class="connection-status connecting" id="connectionStatus">
+        <span>●</span>
+        <span id="statusText">Connecting...</span>
+    </div>
+
+    <!-- Sign In Page -->
+    <div class="container" id="signInPage">
+        <div class="logo">🌐</div>
+        <div class="brand-name">webcorg.com</div>
+        <p class="tagline">Connect instantly with people around the world</p>
+        <div id="googleSignInButton"></div>
+    </div>
+
+    <!-- Home Page -->
+    <div class="container hidden" id="homePage">
+        <div class="logo">🌐</div>
+        <div class="brand-name">webcorg.com</div>
+        <p class="tagline">Your real-time chat platform</p>
+        <p style="color: #999; margin-top: 30px; font-size: 15px;">
+            Click <strong style="color: #667eea;">Dashboard</strong> to start chatting!
+        </p>
+    </div>
+
+    <!-- Dashboard Button -->
+    <button class="dashboard-btn hidden" id="dashboardBtn" onclick="toggleDashboard()">
+        📊 Dashboard
+    </button>
+
+    <!-- Dashboard Sidebar -->
+    <div class="dashboard-sidebar" id="dashboardSidebar">
+        <div class="dashboard-header">
+            <div class="dashboard-profile">
+                <img id="dashboardProfilePic" src="" alt="Profile">
+                <h3 id="dashboardName">User Name</h3>
+                <p id="dashboardEmail">user@email.com</p>
+            </div>
+        </div>
+        <div class="dashboard-menu">
+            <div class="dashboard-menu-item" onclick="openMembers()">
+                <span>👥</span>
+                <span>See All Members</span>
+            </div>
+            <div class="dashboard-menu-item" onclick="openInfoModal('terms')">
+                <span>📜</span>
+                <span>Terms of Use</span>
+            </div>
+            <div class="dashboard-menu-item" onclick="openInfoModal('privacy')">
+                <span>🔒</span>
+                <span>Privacy Policy</span>
+            </div>
+            <div class="dashboard-menu-item" onclick="openInfoModal('about')">
+                <span>ℹ️</span>
+                <span>About</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Members Window -->
+    <div class="members-window" id="membersWindow">
+        <div class="members-header">
+            <h2>👥 All Members</h2>
+            <button class="close-window-btn" onclick="closeMembers()">×</button>
+        </div>
+        <div class="members-list" id="membersList"></div>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <img id="chatUserPic" src="" alt="User">
+            <div class="chat-header-info">
+                <h3 id="chatUserName">User Name</h3>
+                <p id="chatUserEmail">user@email.com</p>
+            </div>
+            <button class="close-window-btn" onclick="closeChat()">×</button>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="handleEnter(event)">
+            <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <!-- Terms Modal -->
+    <div class="info-modal" id="termsModal">
+        <div class="info-modal-header">
+            <h2>📜 Terms of Use</h2>
+            <button class="close-window-btn" onclick="closeInfoModal('terms')">×</button>
+        </div>
+        <div class="info-modal-content">
+            <p>Welcome to WebCorg! By using our platform, you agree to these terms.</p>
+            
+            <h3>Acceptable Use</h3>
+            <p>You agree to use WebCorg only for lawful purposes. You must not transmit harmful, offensive, threatening, or illegal content through our platform.</p>
+            
+            <h3>User Conduct</h3>
+            <p>Be respectful and kind to all users. Harassment, hate speech, bullying, and abusive behavior are strictly prohibited and may result in immediate account suspension.</p>
+            
+            <h3>Account Security</h3>
+            <p>You are responsible for maintaining the security of your account. Do not share your login credentials with anyone.</p>
+            
+            <h3>Content Ownership</h3>
+            <p>You retain all rights to the content you share on WebCorg. By sharing content, you grant us permission to transmit it to your intended recipients.</p>
+            
+            <h3>Service Availability</h3>
+            <p>We strive to provide uninterrupted service but cannot guarantee 100% uptime. The service is provided "as is" without warranties of any kind.</p>
+            
+            <h3>Privacy</h3>
+            <p>Your privacy is important to us. Please review our Privacy Policy to understand how we collect and use your information.</p>
+            
+            <h3>Termination</h3>
+            <p>We reserve the right to suspend or terminate accounts that violate these terms without prior notice.</p>
+            
+            <h3>Changes to Terms</h3>
+            <p>We may update these terms from time to time. Continued use of WebCorg constitutes acceptance of any changes.</p>
+            
+            <h3>Contact</h3>
+            <p>If you have questions about these terms, please contact us through our support channels.</p>
+        </div>
+    </div>
+
+    <!-- Privacy Modal -->
+    <div class="info-modal" id="privacyModal">
+        <div class="info-modal-header">
+            <h2>🔒 Privacy Policy</h2>
+            <button class="close-window-btn" onclick="closeInfoModal('privacy')">×</button>
+        </div>
+        <div class="info-modal-content">
+            <p>At WebCorg, we take your privacy seriously. This policy explains how we handle your information.</p>
+            
+            <h3>Information We Collect</h3>
+            <p>When you sign in with Google, we collect your name, email address, and profile picture. This information is necessary to provide you with our chat services.</p>
+            
+            <h3>How We Use Your Information</h3>
+            <p>Your information is used solely to facilitate communication between users on our platform. We display your name and profile picture to other signed-in users so they can identify and chat with you.</p>
+            
+            <h3>Data Storage</h3>
+            <p>Chat messages are transmitted in real-time through our WebSocket server. Messages are temporarily stored in your browser's memory and are not permanently saved on our servers.</p>
+            
+            <h3>Data Sharing</h3>
+            <p>We do not sell, rent, or share your personal information with third parties for marketing purposes. Your data is only visible to other users you choose to interact with on the platform.</p>
+            
+            <h3>Third-Party Services</h3>
+            <p>We use Google Sign-In for authentication. Please refer to Google's Privacy Policy for information on how they handle your data during the sign-in process.</p>
+            
+            <h3>Security</h3>
+            <p>We implement reasonable security measures to protect your information from unauthorized access, alteration, or destruction.</p>
+            
+            <h3>Your Rights</h3>
+            <p>You have the right to access, modify, or delete your information at any time by signing out of the platform. Since we don't permanently store messages, signing out will remove your presence from the platform.</p>
+            
+            <h3>Cookies</h3>
+            <p>We use minimal cookies necessary for authentication and session management. We do not use tracking cookies for advertising purposes.</p>
+            
+            <h3>Children's Privacy</h3>
+            <p>Our service is not intended for children under 13 years of age. We do not knowingly collect information from children under 13.</p>
+            
+            <h3>Changes to Privacy Policy</h3>
+            <p>We may update this privacy policy from time to time. We will notify users of significant changes through the platform.</p>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="info-modal" id="aboutModal">
+        <div class="info-modal-header">
+            <h2>ℹ️ About WebCorg</h2>
+            <button class="close-window-btn" onclick="closeInfoModal('about')">×</button>
+        </div>
+        <div class="info-modal-content">
+            <h3>What is WebCorg?</h3>
+            <p>WebCorg is a modern, real-time chat platform designed to connect people instantly. Whether you're chatting with family, friends, or colleagues, WebCorg makes communication simple and seamless.</p>
+            
+            <h3>Our Mission</h3>
+            <p>We believe communication should be fast, simple, and accessible to everyone. Our platform focuses on providing a clean, intuitive chat experience without unnecessary complications or distractions.</p>
+            
+            <h3>Key Features</h3>
+            <p><strong>Real-Time Messaging:</strong> Messages are delivered instantly through WebSocket technology, ensuring smooth and responsive conversations.</p>
+            
+            <p><strong>See Who's Online:</strong> Easily view all signed-in members and their online status, so you know who's available to chat.</p>
+            
+            <p><strong>Simple Interface:</strong> Our clean, modern design makes it easy to navigate and start conversations without any learning curve.</p>
+            
+            <p><strong>Secure Authentication:</strong> We use Google Sign-In to ensure secure and verified access to the platform.</p>
+            
+            <p><strong>No Installation Required:</strong> WebCorg works directly in your web browser - no apps or downloads needed.</p>
+            
+            <p><strong>Cross-Platform:</strong> Access WebCorg from any device with a web browser - desktop, tablet, or mobile.</p>
+            
+            <h3>Technology</h3>
+            <p>WebCorg is built using cutting-edge WebSocket technology for real-time bidirectional communication. This ensures your messages are delivered instantly with minimal latency.</p>
+            
+            <h3>Getting Started</h3>
+            <p>Simply sign in with your Google account, and you're ready to start chatting! Click the Dashboard button to view all members and begin conversations.</p>
+            
+            <h3>Version Information</h3>
+            <p><strong>Current Version:</strong> WebCorg v1.0<br>
+            <strong>Release Date:</strong> 2025<br>
+            <strong>Server:</strong> WebSocket-based Real-Time Server</p>
+            
+            <h3>Support</h3>
+            <p>For questions, feedback, or technical support, please reach out through our support channels. We're here to help!</p>
+            
+            <h3>Future Updates</h3>
+            <p>We're constantly working to improve WebCorg. Stay tuned for exciting new features and enhancements!</p>
+            
+            <p style="text-align: center; margin-top: 30px; font-size: 16px; color: #667eea;">
+                <strong>Built with ❤️ for seamless communication</strong>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allUsers = {};
+        let currentChatUser = null;
+        let ws = null;
+        let reconnectInterval = null;
+        let messageHistory = {};
+
+        // CHANGE THESE TO YOUR VALUES
+        const WS_SERVER_URL = 'ws://localhost:8080';
+        const GOOGLE_CLIENT_ID = '375904669402-j7g4toatkqftimjj2boiualoicvea4o7.apps.googleusercontent.com';
+
+        // Initialize WebSocket
+        function initWebSocket() {
+            updateConnectionStatus('connecting');
+            
+            try {
+                ws = new WebSocket(WS_SERVER_URL);
+                
+                ws.onopen = function() {
+                    console.log('✅ Connected to WebCorg server');
+                    updateConnectionStatus('connected');
+                    
+                    if (currentUser) {
+                        sendUserJoin();
+                    }
+                    
+                    if (reconnectInterval) {
+                        clearInterval(reconnectInterval);
+                        reconnectInterval = null;
+                    }
+                };
+                
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleServerMessage(data);
+                    } catch (e) {
+                        console.error('Error parsing message:', e);
+                    }
+                };
+                
+                ws.onerror = function(error) {
+                    console.error('❌ WebSocket error:', error);
+                    updateConnectionStatus('disconnected');
+                };
+                
+                ws.onclose = function() {
+                    console.log('🔌 Disconnected from server');
+                    updateConnectionStatus('disconnected');
+                    
+                    if (!reconnectInterval) {
+                        reconnectInterval = setInterval(function() {
+                            console.log('🔄 Attempting to reconnect...');
+                            initWebSocket();
+                        }, 3000);
+                    }
+                };
+            } catch (error) {
+                console.error('Failed to create WebSocket:', error);
+                updateConnectionStatus('disconnected');
+            }
+        }
+
+        // Update connection status UI
+        function updateConnectionStatus(status) {
+            const statusEl = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            
+            statusEl.className = `connection-status ${status}`;
+            
+            switch(status) {
+                case 'connected':
+                    statusText.textContent = 'Connected';
+                    break;
+                case 'connecting':
+                    statusText.textContent = 'Connecting...';
+                    break;
+                case 'disconnected':
+                    statusText.textContent = 'Disconnected';
+                    break;
+            }
+        }
+
+        // Send user join message
+        function sendUserJoin() {
+            if (ws && ws.readyState === WebSocket.OPEN && currentUser) {
+                ws.send(JSON.stringify({
+                    type: 'user_join',
+                    name: currentUser.name,
+                    email: currentUser.email,
+                    picture: currentUser.picture
+                }));
+            }
+        }
+
+        // Handle messages from server
+        function handleServerMessage(data) {
+            console.log('📨 Received:', data.type);
+            
+            switch(data.type) {
+                case 'user_join':
+                    if (data.email !== currentUser.email) {
+                        allUsers[data.email] = {
+                            name: data.name,
+                            email: data.email,
+                            picture: data.picture
+                        };
+                        updateMembersList();
+                    }
+                    break;
+                    
+                case 'users_list':
+                    data.users.forEach(user => {
+                        if (user.email !== currentUser.email) {
+                            allUsers[user.email] = user;
+                        }
+                    });
+                    updateMembersList();
+                    break;
+                    
+                case 'user_left':
+                    delete allUsers[data.email];
+                    updateMembersList();
+                    break;
+                    
+                case 'chat_message':
+                    const chatId = getChatId(data.from, currentUser.email);
+                    if (!messageHistory[chatId]) {
+                        messageHistory[chatId] = [];
+                    }
+                    messageHistory[chatId].push(data.message);
+                    
+                    if (currentChatUser && currentChatUser.email === data.from) {
+                        displayMessage(data.message, false);
+                    }
+                    break;
+            }
+        }
+
+        // Initialize Google Sign-In
+        function initGoogleSignIn() {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleCredentialResponse
+            });
+
+            google.accounts.id.renderButton(
+                document.getElementById('googleSignInButton'),
+                { 
+                    theme: 'outline', 
+                    size: 'large',
+                    text: 'signin_with',
+                    width: 320
+                }
+            );
+        }
+
+        // Handle Google Sign-In Response
+        function handleCredentialResponse(response) {
+            const payload = parseJwt(response.credential);
+            
+            currentUser = {
+                name: payload.name,
+                email: payload.email,
+                picture: payload.picture
+            };
+
+            allUsers[currentUser.email] = currentUser;
+
+            document.getElementById('dashboardName').textContent = currentUser.name;
+            document.getElementById('dashboardEmail').textContent = currentUser.email;
+            document.getElementById('dashboardProfilePic').src = currentUser.picture;
+
+            document.getElementById('signInPage').classList.add('hidden');
+            document.getElementById('homePage').classList.remove('hidden');
+            document.getElementById('dashboardBtn').classList.remove('hidden');
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                sendUserJoin();
+            }
+        }
+
+        // Parse JWT Token
+        function parseJwt(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        // Toggle Dashboard
+        function toggleDashboard() {
+            const sidebar = document.getElementById('dashboardSidebar');
+            const overlay = document.getElementById('overlay');
+            
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // Open Members Window
+        function openMembers() {
+            document.getElementById('membersWindow').classList.add('active');
+            document.getElementById('overlay').classList.add('active');
+            updateMembersList();
+            document.getElementById('dashboardSidebar').classList.remove('active');
+        }
+
+        // Close Members Window
+        function closeMembers() {
+            document.getElementById('membersWindow').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        // Update Members List
+        function updateMembersList() {
+            const list = document.getElementById('membersList');
+            list.innerHTML = '';
+
+            let hasOthers = false;
+            for (let email in allUsers) {
+                if (email === currentUser.email) continue;
+                hasOthers = true;
+                
+                const user = allUsers[email];
+                const item = document.createElement('div');
+                item.className = 'member-item';
+                item.innerHTML = `
+                    <div class="member-info">
+                        <img src="${user.picture}" alt="${user.name}">
+                        <div class="member-details">
+                            <h4>${user.name}<span class="online-badge"></span></h4>
+                            <p>${user.email}</p>
+                        </div>
+                    </div>
+                    <button class="chat-btn" onclick='openChat(${JSON.stringify(user)})'>Chat</button>
+                `;
+                list.appendChild(item);
+            }
+
+            if (!hasOthers) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p><strong>No other members online yet</strong></p>
+                        <p style="font-size: 13px; margin-top: 10px;">Share webcorg.com with friends to start chatting!</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Open Chat Window
+        function openChat(user) {
+            currentChatUser = user;
+            
+            document.getElementById('chatUserName').textContent = user.name;
+            document.getElementById('chatUserEmail').textContent = user.email;
+            document.getElementById('chatUserPic').src = user.picture;
+            
+            document.getElementById('chatWindow').classList.add('active');
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('membersWindow').classList.remove('active');
+            
+            loadChatHistory();
+        }
+
+        // Close Chat Window
+        function closeChat() {
+            document.getElementById('chatWindow').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+            currentChatUser = null;
+        }
+
+        // Get Chat ID
+        function getChatId(email1, email2) {
+            return [email1, email2].sort().join('_');
+        }
+
+        // Load Chat History
+        function loadChatHistory() {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = '';
+            
+            const chatId = getChatId(currentUser.email, currentChatUser.email);
+            const messages = messageHistory[chatId] || [];
+            
+            messages.forEach(msg => {
+                const isSent = msg.sender === currentUser.email;
+                displayMessage(msg, isSent);
+            });
+            
+            scrollToBottom();
+        }
+
+        // Display Message
+        function displayMessage(message, isSent) {
+            const messagesContainer = document.getElementById('chatMessages');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">${message.text}</div>
+                <div class="message-info">
+                    <img src="${message.picture}" alt="${message.senderName}">
+                    <span>${message.senderName}</span>
+                    <span>•</span>
+                    <span>${message.time}</span>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Send Message
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text || !currentChatUser || !ws || ws.readyState !== WebSocket.OPEN) {
+                return;
+            }
+            
+            const now = new Date();
+            const message = {
+                text: text,
+                sender: currentUser.email,
+                senderName: currentUser.name,
+                picture: currentUser.picture,
+                time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+            };
+            
+            // Save to local history
+            const chatId = getChatId(currentUser.email, currentChatUser.email);
+            if (!messageHistory[chatId]) {
+                messageHistory[chatId] = [];
+            }
+            messageHistory[chatId].push(message);
+            
+            // Display locally
+            displayMessage(message, true);
+            
+            // Send to server
+            ws.send(JSON.stringify({
+                type: 'chat_message',
+                from: currentUser.email,
+                to: currentChatUser.email,
+                message: message
+            }));
+            
+            input.value = '';
+        }
+
+        // Handle Enter Key
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Scroll to Bottom
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Open Info Modal
+        function openInfoModal(type) {
+            document.getElementById(type + 'Modal').classList.add('active');
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('dashboardSidebar').classList.remove('active');
+        }
+
+        // Close Info Modal
+        function closeInfoModal(type) {
+            document.getElementById(type + 'Modal').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        // Close All Windows
+        function closeAll() {
+            document.getElementById('dashboardSidebar').classList.remove('active');
+            document.getElementById('membersWindow').classList.remove('active');
+            document.getElementById('chatWindow').classList.remove('active');
+            document.getElementById('termsModal').classList.remove('active');
+            document.getElementById('privacyModal').classList.remove('active');
+            document.getElementById('aboutModal').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            initGoogleSignIn();
+            initWebSocket();
+        };
+    </script>
+</body>
+</html>
